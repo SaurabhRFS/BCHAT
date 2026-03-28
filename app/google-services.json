@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "991172606285",
+    "project_id": "b-chat-10563",
+    "storage_bucket": "b-chat-10563.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:991172606285:android:e8caa06dc594cf12731f04",
+        "android_client_info": {
+          "package_name": "com.example.bchat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChTXNPCDsuZXaPbPoxQt6K-3NMoJ4HuLU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
