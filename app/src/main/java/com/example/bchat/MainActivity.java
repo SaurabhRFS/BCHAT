@@ -60,8 +60,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "BCHAT_MESH";
 
     private final List<String> connectedEndpoints = new ArrayList<>();
-
-    // Tracks messages to prevent infinite loops
     private final Set<String> processedMessageIds = new HashSet<>();
     private boolean isMeshActive = false;
 
@@ -126,7 +124,6 @@ public class MainActivity extends AppCompatActivity {
     private final EndpointDiscoveryCallback endpointDiscoveryCallback = new EndpointDiscoveryCallback() {
         @Override
         public void onEndpointFound(@NonNull String endpointId, @NonNull DiscoveredEndpointInfo info) {
-            // FIX: Tie-breaker to prevent the 6-second collision drop
             if (myEndpointName.compareTo(endpointId) > 0) {
                 connectionsClient.requestConnection(myEndpointName, endpointId, connectionLifecycleCallback)
                         .addOnFailureListener(e -> Log.e(TAG, "Request connection failed: " + e.getMessage()));
@@ -178,15 +175,18 @@ public class MainActivity extends AppCompatActivity {
                     String messageId = UUID.randomUUID().toString();
                     processedMessageIds.add(messageId);
 
-                    String payloadString = messageId + "SOS|" + severity + "|" + myEndpointName + "|" + lat + "|" + lng + "|" + System.currentTimeMillis();
+                    // ✅ FIXED payload format
+                    String payloadString = messageId + "|SOS|" + severity + "|" + myEndpointName + "|" + lat + "|" + lng + "|" + System.currentTimeMillis();
 
-                    // Passing null because we are the origin, we want to broadcast to everyone
                     broadcastPayload(payloadString, null);
+
+                    // ✅ ADDED Firebase upload for origin node
+                    uploadToFirebase(payloadString);
+
                     statusText.setText(severity + " SOS Broadcasted!");
                 });
     }
 
-    // FIX: Added excludeEndpointId to prevent sending data back to the node that just sent it to us
     private void broadcastPayload(String payloadString, String excludeEndpointId) {
         Payload bytesPayload = Payload.fromBytes(payloadString.getBytes(StandardCharsets.UTF_8));
 
@@ -209,7 +209,6 @@ public class MainActivity extends AppCompatActivity {
                 byte[] receivedBytes = payload.asBytes();
                 if (receivedBytes != null) {
                     String receivedMessage = new String(receivedBytes, StandardCharsets.UTF_8);
-                    // Pass the sender's endpointId so we don't echo it back to them
                     handleIncomingMeshMessage(receivedMessage, endpointId);
                 }
             }
@@ -225,12 +224,10 @@ public class MainActivity extends AppCompatActivity {
         String messageId = parts[0];
 
         if (processedMessageIds.contains(messageId)) {
-            return; // Drop duplicate
+            return;
         }
 
         processedMessageIds.add(messageId);
-
-        // Forward to all connected nodes EXCEPT the sender
         broadcastPayload(message, senderEndpointId);
 
         runOnUiThread(() -> statusText.setText("RELAYING DATA:\n" + message));
@@ -284,8 +281,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 }
-
-
 
 
 
